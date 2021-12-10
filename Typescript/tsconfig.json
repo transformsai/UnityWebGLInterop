@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+      "lib": ["es5", "es6", "dom","ESNext"],
+      "target": "ES6",
+      "rootDir": "./",
+      "outFile": "../Runtime/Internal/Runtime.jspre",
+      "strict": true,
+      "noFallthroughCasesInSwitch":true
+  }
+}

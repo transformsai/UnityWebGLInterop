@@ -1,0 +1,20 @@
+{
+    "name": "ai.transforms.js-interop",
+    "version": "0.1.0",
+    "displayName": "JS-Interop",
+    "description": "Allows calling Javascript in webgl builds using standard C# flows",
+    "unity": "2020.3",
+    "unityRelease": "22f1",
+    "documentationUrl": "https://github.com/transitional-forms-inc/GrpcWebUnity",
+    "dependencies": {
+   },
+   "keywords": [
+      "webgl",
+      "javascript"
+    ],
+    "author": {
+      "name": "Transitional Forms Inc",
+      "email": "dante@transforms.ai",
+      "url": "http://transforms.ai"
+    }
+  }

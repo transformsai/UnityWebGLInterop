@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: a94b2acb69a92ce4b939ba0dd2da983d
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - rawRuntime: {fileID: 11500000, guid: 73ce625697837b64c92023741532ce7a, type: 3}
+  - tsGenerator: {fileID: 11500000, guid: c876584e1dde9fa4da14fb4eb1d35b56, type: 3}
+  - jsGenerator: {fileID: 11500000, guid: c9f994768885966468a0aa97c4764c0a, type: 3}
+  - jsLib: {fileID: -1121539586, guid: a3f018c9f4d832641a0d3db4207a15bd, type: 3}
+  - typescriptRuntime: {fileID: 102900000, guid: 8657d8473d1bfc846a5a6a1ecc655213, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
