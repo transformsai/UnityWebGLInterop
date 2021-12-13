@@ -27,7 +27,7 @@ namespace JsInterop.Types
                 argArray[i] = argument.As(paramType);
             }
             var result = Delegate.DynamicInvoke(argArray);
-            return result == null ? JsValue.Undefined : Runtime.CreateFromObject(result);
+            return result == null ? JsValue.Undefined : JsRuntime.CreateFromObject(result);
         }
     
     

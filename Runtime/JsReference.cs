@@ -28,7 +28,7 @@ namespace JsInterop
 
         public abstract object RawValue { get; }
         public abstract bool TruthyValue { get; }
-        public virtual double NumberValue => Runtime.GetNumber(this);
+        public virtual double NumberValue => JsRuntime.GetNumber(this);
         public JsValue GetProp(JsValue key) => RefValue.GetProp(key);
         public JsValue Invoke(string functionName, params JsValue[] values) =>
             RefValue.Invoke(functionName, values);
@@ -37,7 +37,7 @@ namespace JsInterop
 
         public static implicit operator JsValue(JsReference reference) =>
             reference.RefValue;
-        public string GetJsStringImpl() => Runtime.GetString(this);
+        public string GetJsStringImpl() => JsRuntime.GetString(this);
         public override string ToString() => ReferenceEquals(RawValue, this) ? GetJsStringImpl() : RawValue?.ToString() ?? "";
         public object As(Type type) => RefValue.As(type);
         public T As<T>() => RefValue.As<T>();
@@ -55,7 +55,7 @@ namespace JsInterop
             if (_ref.HasValue)
             {
                 ReferenceMap.Remove(_ref.Value.Value);
-                Runtime.GarbageCollect(this);
+                JsRuntime.GarbageCollect(this);
                 _ref = null;
             }
 

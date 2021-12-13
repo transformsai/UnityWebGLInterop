@@ -42,8 +42,8 @@ namespace JsInterop.Types
                 CleanUp();
             }
 
-            onAccept = Runtime.CreateCallback((Action<JsValue>) AcceptAction);
-            onReject = Runtime.CreateCallback((Action<JsValue>) RejectAction);
+            onAccept = JsRuntime.CreateCallback((Action<JsValue>) AcceptAction);
+            onReject = JsRuntime.CreateCallback((Action<JsValue>) RejectAction);
 
             Then(onAccept, onReject);
             return  tcs.Task;

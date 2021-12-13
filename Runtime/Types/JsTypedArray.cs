@@ -21,7 +21,7 @@ namespace JsInterop.Types
         public virtual void GetDataCopy<T>(T[] copyDestination) where T : unmanaged
         {
             CheckLengths(Length, copyDestination.Length);
-            using var dest = Runtime.CreateSharedTypedArray(copyDestination);
+            using var dest = JsRuntime.CreateSharedTypedArray(copyDestination);
             dest.Invoke("set", this);
 
         }
@@ -29,7 +29,7 @@ namespace JsInterop.Types
         public virtual void SetDataCopy<T>(T[] copySource) where T : unmanaged
         {
             CheckLengths(copySource.Length, Length);
-            using var src = Runtime.CreateSharedTypedArray(copySource);
+            using var src = JsRuntime.CreateSharedTypedArray(copySource);
             Invoke("set", src);
         }
 

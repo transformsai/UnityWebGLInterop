@@ -2,13 +2,18 @@
     "name": "JsInterop",
     "rootNamespace": "JsInterop",
     "references": [],
-    "includePlatforms": [],
+    "includePlatforms": [
+        "Editor",
+        "WebGL"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": true,
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,
-    "defineConstraints": [],
+    "defineConstraints": [
+        "UNITY_WEBGL"
+    ],
     "versionDefines": [],
     "noEngineReferences": false
 }

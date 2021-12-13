@@ -1,19 +1,18 @@
 using System;
 using System.Collections;
-using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
 using JsInterop.Internal;
 using JsInterop.Types;
+using UnityEngine;
+using Debug = System.Diagnostics.Debug;
 using Raw = JsInterop.Internal.RuntimeRaw;
 
 namespace JsInterop
 {
-    public static class Runtime
+    public static class JsRuntime
     {
         // --- Api ---
         public static JsValue GetGlobalValue(string identifier) =>
@@ -146,7 +145,6 @@ namespace JsInterop
             }
         }
 
-
         public static JsTypedArray CreateTypedArray<T>(T[] array) where T : unmanaged
         {
             unsafe
@@ -201,11 +199,19 @@ namespace JsInterop
                 default: throw new InvalidCastException($"Object cannot be converted to {nameof(JsValue)}");
             }
         }
-        public static void Initialize()
-        {
-            Raw.Initialize(OnJsCallback, Acquire, Release);
-        }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void Initialize()
+        {
+            if(Application.isEditor) return;
+
+            if (Application.platform != RuntimePlatform.WebGLPlayer)
+                throw new PlatformNotSupportedException("Should not be using JS-Interop on non-Webgl platforms");
+
+            Raw.Initialize(OnJsCallback, Acquire, Release);
+            UnityEngine.Debug.Log("Initialized JS-Interop");
+        }
+        
 
         private static bool Acquire(double refId)
         {

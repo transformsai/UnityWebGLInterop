@@ -99,15 +99,15 @@ namespace JsInterop
                 $"Cannot create JsValue with reference typeId {typeId} with null reference");
         }
 
-        public JsValue GetProp(JsValue key) => Runtime.GetProp(this, key);
+        public JsValue GetProp(JsValue key) => JsRuntime.GetProp(this, key);
 
         public JsValue Invoke(string functionName, params JsValue[] values) =>
-            Runtime.Invoke(this, functionName, values);
+            JsRuntime.Invoke(this, functionName, values);
         public JsValue Invoke(string functionName, JsValue param1 = default, JsValue param2 = default, JsValue param3 = default) =>
-            Runtime.Invoke(this, functionName, param1, param2, param3);
+            JsRuntime.Invoke(this, functionName, param1, param2, param3);
 
 
-        public JsValue EvaluateOnThis(string functionBody) => Runtime.CreateFunction(functionBody, true).Bind(this).Call();
+        public JsValue EvaluateOnThis(string functionBody) => JsRuntime.CreateFunction(functionBody, true).Bind(this).Call();
 
         public T As<T>()
         {
@@ -197,9 +197,9 @@ namespace JsInterop
         public static implicit operator JsValue(int i) => new JsValue(JsTypes.Number, i);
         public static implicit operator JsValue(float i) => new JsValue(JsTypes.Number, i);
         public static implicit operator JsValue(double i) => new JsValue(JsTypes.Number, i);
-        public static implicit operator JsValue(BigInteger i) => Runtime.CreateBigInt(i);
+        public static implicit operator JsValue(BigInteger i) => JsRuntime.CreateBigInt(i);
         // String converter must also cover null case since it is the only reference converter.
-        public static implicit operator JsValue(string i) => i == null ? Null : Runtime.CreateString(i);
+        public static implicit operator JsValue(string i) => i == null ? Null : JsRuntime.CreateString(i);
 
         // Implement type coersion
         public static implicit operator bool(JsValue i) => i.TruthyValue;
@@ -214,7 +214,7 @@ namespace JsInterop
         #endregion
 
         public bool Equals(JsValue other) => TypeId == other.TypeId && Value == other.Value && _reference == other._reference;
-        public bool EqualsJs(JsValue other) => Runtime.Equals(this, other);
+        public bool EqualsJs(JsValue other) => JsRuntime.Equals(this, other);
 
         public override bool Equals(object obj) => obj is JsValue other && Equals(other);
 

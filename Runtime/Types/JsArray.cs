@@ -43,8 +43,8 @@ namespace JsInterop.Types
 
         public JsValue this[int index]
         {
-            get => Runtime.GetArrayElement(this, index);
-            set => Runtime.SetArrayElement(this, index, value);
+            get => JsRuntime.GetArrayElement(this, index);
+            set => JsRuntime.SetArrayElement(this, index, value);
         }
 
         public override bool TruthyValue => Count > 0;

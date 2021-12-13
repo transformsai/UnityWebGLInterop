@@ -21,8 +21,8 @@ namespace JsInterop.Types
         // However, if the C# cache fails, the JS cache will check the string value using a JS map.
         // JS is guaranteed to return the same Value for equal strings.
         // Examples:
-        // var x = Runtime.CreateString("Cheem"); // Creates a string in JS
-        // var y = Runtime.CreateString("Cheem"); // y and x are the same reference
+        // var x = JsRuntime.CreateString("Cheem"); // Creates a string in JS
+        // var y = JsRuntime.CreateString("Cheem"); // y and x are the same reference
         private static readonly ConditionalWeakTable<string, JsString> StringCache = new ConditionalWeakTable<string, JsString>();
         public static bool TryGetString(string str, out JsString jsString) => StringCache.TryGetValue(str, out jsString);
         public static void StoreString(string str, JsString jsStr)
@@ -39,7 +39,7 @@ namespace JsInterop.Types
             get
             {
                 if (_valueCache != null) return _valueCache;
-                _valueCache = Runtime.GetString(this);
+                _valueCache = JsRuntime.GetString(this);
                 StoreString(_valueCache, this);
                 return _valueCache;
             }

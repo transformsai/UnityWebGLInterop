@@ -6,7 +6,7 @@ namespace JsInterop.Types
 {
     public class JsBigInt : JsReference
     {
-        public static implicit operator JsBigInt(BigInteger b) => Runtime.CreateBigInt(b);
+        public static implicit operator JsBigInt(BigInteger b) => JsRuntime.CreateBigInt(b);
         public static implicit operator BigInteger(JsBigInt b) => b.Value;
 
 

@@ -12,7 +12,7 @@ namespace JsInterop.Types
         public override bool TruthyValue => true;
 
         internal JsObject(double refId, JsTypes typeId = JsTypes.Object) : base(typeId, refId) { }
-        public void SetProp(string key, JsValue value) => Runtime.SetProp(this, key, value);
+        public void SetProp(string key, JsValue value) => JsRuntime.SetProp(this, key, value);
         public void Populate(IDictionary dictionary)
         {
             var keys = dictionary.Keys as ICollection<string>;
@@ -21,12 +21,12 @@ namespace JsInterop.Types
             foreach (var key in keys)
             {
                 var rawValue = dictionary[key];
-                var value = Runtime.CreateFromObject(rawValue);
+                var value = JsRuntime.CreateFromObject(rawValue);
                 SetProp(key, value);
             }
         }
 
-        public JsArray Keys => Runtime.GetGlobalValue("Object").Invoke("keys", this).As<JsArray>();
+        public JsArray Keys => JsRuntime.GetGlobalValue("Object").Invoke("keys", this).As<JsArray>();
 
 
         public Dictionary<string, JsValue> AsDictionary()
