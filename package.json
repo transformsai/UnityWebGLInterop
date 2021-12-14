@@ -2,7 +2,7 @@
     "name": "ai.transforms.js-interop",
     "version": "0.2.0",
     "displayName": "JS-Interop",
-    "description": "Allows calling Javascript in webgl builds using standard C# flows",
+    "description": "Allows calling Javascript in webgl builds using using C# Code Only.",
     "unity": "2020.3",
     "unityRelease": "22f1",
     "documentationUrl": "https://github.com/transformsai/UnityWebGLInterop",
