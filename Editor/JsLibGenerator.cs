@@ -3,11 +3,11 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
-using JsInterop.Internal;
-using JsInterop.Types;
-using static JsInterop.Editor.GeneratorCommon;
+using TransformsAI.Unity.WebGL.Interop.Internal;
+using TransformsAI.Unity.WebGL.Interop.Types;
+using static TransformsAI.Unity.WebGL.Interop.Editor.GeneratorCommon;
 
-namespace JsInterop.Editor
+namespace TransformsAI.Unity.WebGL.Interop.Editor
 {
     public static class JsLibGenerator
     {

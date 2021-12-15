@@ -3,10 +3,9 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using JsInterop.Internal;
-using JsInterop.Types;
+using TransformsAI.Unity.WebGL.Interop.Internal;
 
-namespace JsInterop
+namespace TransformsAI.Unity.WebGL.Interop
 {
     public readonly struct JsValue : IJsValue, IEquatable<JsValue>
     {

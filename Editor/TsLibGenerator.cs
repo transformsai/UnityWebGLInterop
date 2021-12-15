@@ -3,11 +3,11 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
-using JsInterop.Internal;
-using JsInterop.Types;
-using static JsInterop.Editor.GeneratorCommon;
+using TransformsAI.Unity.WebGL.Interop.Internal;
+using TransformsAI.Unity.WebGL.Interop.Types;
+using static TransformsAI.Unity.WebGL.Interop.Editor.GeneratorCommon;
 
-namespace JsInterop.Editor
+namespace TransformsAI.Unity.WebGL.Interop.Editor
 {
     public static class TsLibGenerator
     {
@@ -182,6 +182,8 @@ namespace JsInterop.Editor
         
             var releaseParam = initParams[2];
             var releaseMethod = releaseParam.ParameterType.GetMethod("Invoke");
+            if (releaseMethod != acquireMethod)
+                throw new Exception("CodeGen assumes that Release and Acquire have the same signature");
 
             WriteArrayBuilder(arrayBuilderType);
 

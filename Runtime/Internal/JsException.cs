@@ -1,6 +1,6 @@
 using System;
 
-namespace JsInterop.Internal
+namespace TransformsAI.Unity.WebGL.Interop.Internal
 {
     public class JsException : Exception
     {

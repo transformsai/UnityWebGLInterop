@@ -1,13 +1,13 @@
 using System;
-using JsInterop.Internal;
+using TransformsAI.Unity.WebGL.Interop.Internal;
 
-namespace JsInterop.Types
+namespace TransformsAI.Unity.WebGL.Interop.Types
 {
     public class JsTypedArray : JsObject
     {
 
         private int? _length;
-        public virtual int Length => _length ?? (_length = GetProp("length").As<int>()).Value;
+        public int Length => _length ?? (_length = GetProp("length").As<int>()).Value;
 
         internal JsTypedArray(double refId, JsTypes typeId = JsTypes.TypedArray) : base(refId, typeId) { }
 

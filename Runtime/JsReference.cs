@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using JsInterop.Internal;
+using TransformsAI.Unity.WebGL.Interop.Internal;
 
-namespace JsInterop
+namespace TransformsAI.Unity.WebGL.Interop
 {
     public abstract class JsReference : IDisposable, IJsValue
     {

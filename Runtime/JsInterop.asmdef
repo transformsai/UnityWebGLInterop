@@ -1,6 +1,6 @@
 {
     "name": "JsInterop",
-    "rootNamespace": "JsInterop",
+    "rootNamespace": "TransformsAI.Unity.WebGL.Interop",
     "references": [],
     "includePlatforms": [
         "Editor",

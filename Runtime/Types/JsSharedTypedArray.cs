@@ -1,9 +1,9 @@
 using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using JsInterop.Internal;
+using TransformsAI.Unity.WebGL.Interop.Internal;
 
-namespace JsInterop.Types
+namespace TransformsAI.Unity.WebGL.Interop.Types
 {
     public class JsSharedTypedArray : JsTypedArray
     {

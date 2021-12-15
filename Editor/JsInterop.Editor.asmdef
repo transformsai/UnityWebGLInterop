@@ -1,6 +1,6 @@
 {
     "name": "JsInterop.Editor",
-    "rootNamespace": "JsInterop.Editor",
+    "rootNamespace": "TransformsAI.Unity.WebGL.Interop.Editor",
     "references": [
         "GUID:694275f85bc6e9742851388ff40be8fc"
     ],

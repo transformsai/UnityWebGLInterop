@@ -1,4 +1,3 @@
-using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -6,7 +5,7 @@ using AOT;
 
 [assembly: InternalsVisibleTo("JsInterop.Editor")]
 
-namespace JsInterop.Internal
+namespace TransformsAI.Unity.WebGL.Interop.Internal
 {
     internal static class RuntimeRaw
     {

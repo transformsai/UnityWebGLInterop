@@ -4,13 +4,14 @@ using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using JsInterop.Internal;
-using JsInterop.Types;
+using TransformsAI.Unity.WebGL.Interop.Internal;
+using TransformsAI.Unity.WebGL.Interop.Types;
 using UnityEngine;
-using Debug = System.Diagnostics.Debug;
-using Raw = JsInterop.Internal.RuntimeRaw;
 
-namespace JsInterop
+using Debug = System.Diagnostics.Debug;
+using Raw = TransformsAI.Unity.WebGL.Interop.Internal.RuntimeRaw;
+
+namespace TransformsAI.Unity.WebGL.Interop
 {
     public static class JsRuntime
     {
@@ -255,22 +256,7 @@ namespace JsInterop
         private static int Type(this JsValue js) => (int)js.TypeId;
         private static int Type(this JsReference js) => js?.RefValue.Type() ?? JsValue.Null.Type();
         private static int TypeCode(this Array array) => (int)JsTypedArray.GetTypeCode(array);
-
-        private static T WithHandle<T>(Array t, Func<IntPtr, T> func)
-        {
-            var handle = GCHandle.Alloc(t, GCHandleType.Pinned);
-            try { return func(handle.AddrOfPinnedObject()); }
-            finally { handle.Free(); }
-        }
-
-        private static void WithHandle(Array t, Action<IntPtr> func)
-        {
-            var handle = GCHandle.Alloc(t, GCHandleType.Pinned);
-            try { func(handle.AddrOfPinnedObject()); }
-            finally { handle.Free(); }
-        }
-
-
+        
         private static void CheckException(this double refId, int typeId, [CallerMemberName] string funcName = null)
         {
             if (typeId != (int)JsTypes.Exception) return;

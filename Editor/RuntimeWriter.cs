@@ -4,7 +4,7 @@ using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace JsInterop.Editor
+namespace TransformsAI.Unity.WebGL.Interop.Editor
 {
     [InitializeOnLoad]
     public class RuntimeWriter : ScriptableObject

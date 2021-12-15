@@ -2,9 +2,9 @@ using System;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using JsInterop.Internal;
+using TransformsAI.Unity.WebGL.Interop.Internal;
 
-namespace JsInterop.Editor
+namespace TransformsAI.Unity.WebGL.Interop.Editor
 {
     internal static class GeneratorCommon {
 

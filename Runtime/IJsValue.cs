@@ -1,6 +1,6 @@
 using System;
 
-namespace JsInterop
+namespace TransformsAI.Unity.WebGL.Interop
 {
     public interface IJsValue
     {

@@ -2,9 +2,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using JsInterop.Internal;
+using TransformsAI.Unity.WebGL.Interop.Internal;
 
-namespace JsInterop.Types
+namespace TransformsAI.Unity.WebGL.Interop.Types
 {
     public class JsObject : JsReference
     {
@@ -27,8 +27,7 @@ namespace JsInterop.Types
         }
 
         public JsArray Keys => JsRuntime.GetGlobalValue("Object").Invoke("keys", this).As<JsArray>();
-
-
+        
         public Dictionary<string, JsValue> AsDictionary()
         {
             return Keys.ToDictionary(it=>(string)it, GetProp);
