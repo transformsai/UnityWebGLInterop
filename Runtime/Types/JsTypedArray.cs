@@ -14,7 +14,7 @@ namespace TransformsAI.Unity.WebGL.Interop.Types
         public T[] GetDataCopy<T>() where T : unmanaged
         {
             var copyDestination = new T[Length];
-            GetDataCopy<T>(copyDestination);
+            GetDataCopy(copyDestination);
             return copyDestination;
         }
 

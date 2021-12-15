@@ -141,7 +141,7 @@ namespace TransformsAI.Unity.WebGL.Interop.Editor
 
             var values = (TypedArrayTypeCode[])Enum.GetValues(typeof(TypedArrayTypeCode));
 
-            using (Builder.Append("type ").Append(typedArrayType).AppendLine(" =").Indent())
+            using (Builder.Append("type ").Append(typedArrayType).Append(" =").Indent())
             {
                 for (var i = 0; i < values.Length; i++)
                 {

@@ -33,6 +33,7 @@ namespace TransformsAI.Unity.WebGL.Interop.Editor
         }
         public static IndentHolder Indent(this StringBuilder builder)
         {
+            builder.AppendLine();
             return new IndentHolder();
         }
 
