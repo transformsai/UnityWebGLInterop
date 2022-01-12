@@ -23,23 +23,24 @@ enum JsTypes {
 }
 
 interface JsRuntime {
-  GetGlobalObject: (name: string) => JsValue;
+  GetGlobalObject: (targetRef: number, targetType: number) => JsValue;
   CreateEmptyObject: () => JsValue;
   CreateString: (str: string) => JsValue;
   CreateArray: () => JsValue;
   CallSlow: (functionRef: number, paramArrayRef: number) => JsValue;
   Call: (functionRef: number, paramValue1: number, paramTypeId1: number, paramValue2: number, paramTypeId2: number, paramValue3: number, paramTypeId3: number) => JsValue;
-  InvokeSlow: (targetRef: number, targetType: number, fnName: string, paramArrayRef: number) => JsValue;
-  Invoke: (targetRef: number, targetType: number, fnName: string, paramValue1: number, paramTypeId1: number, paramValue2: number, paramTypeId2: number, paramValue3: number, paramTypeId3: number) => JsValue;
+  InvokeSlow: (targetRef: number, targetType: number, fnNameRef: number, fnNameType: number, paramArrayRef: number) => JsValue;
+  Invoke: (targetRef: number, targetType: number, fnNameRef: number, fnNameType: number, paramValue1: number, paramTypeId1: number, paramValue2: number, paramTypeId2: number, paramValue3: number, paramTypeId3: number) => JsValue;
   ConstructSlow: (functionRef: number, paramArrayRef: number) => JsValue;
   Construct: (functionRef: number, paramValue1: number, paramTypeId1: number, paramValue2: number, paramTypeId2: number, paramValue3: number, paramTypeId3: number) => JsValue;
-  GetProp: (objectRef: number, propNameValue: number, propNameTypeId: number) => JsValue;
-  SetProp: (objectRef: number, propNameValue: number, propNameTypeId: number, value: number, valueTypeId: number) => JsValue;
+  GetProp: (objectRef: number, objectType: number, propNameValue: number, propNameTypeId: number) => JsValue;
+  SetProp: (objectRef: number, objectType: number, propNameValue: number, propNameTypeId: number, value: number, valueTypeId: number) => JsValue;
   GetArrayElement: (arrayRef: number, index: number) => JsValue;
   SetArrayElement: (arrayRef: number, index: number, value: number, valueTypeId: number) => JsValue;
   CreateCallback: (paramArrayRef: number) => JsValue;
   CreateSharedTypedArray: (arrayPtr: number, typeCode: number, arrayLength: number) => JsValue;
   CreateTypedArray: (arrayPtr: number, typeCode: number, arrayLength: number) => JsValue;
+  CreateEmptyTypedArray: (typeCode: number) => JsValue;
   GarbageCollect: (value: number, typeId: number) => JsValue;
   Equals: (lhsValue: number, lhsType: number, rhsValue: number, rhsType: number) => JsValue;
   GetNumber: (value: number, typeId: number) => JsValue;
@@ -70,7 +71,7 @@ enum TypedArrayTypeCode {
   Uint8ClampedArray = 15,
 }
 
-type ArrayBuilder = (pointer: number, typeCode: TypedArrayTypeCode, length: number) => TypedArray;
+type ArrayBuilder = (typeCode: TypedArrayTypeCode, pointer: number, length: number) => TypedArray;
 type JsCallback = (callbackRefId: number, responseRefId: number, value: number, typeId: number, paramsAreArray: boolean) => void;
 type ReferenceHandler = (refId: number) => boolean;
 

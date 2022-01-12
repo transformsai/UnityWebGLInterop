@@ -55,7 +55,9 @@ namespace TransformsAI.Unity.WebGL.Interop.Types
     }
 
 
-//the name of these need to match the constructor of the JS counterpart
+    // The name of these need to match the constructor of the JS counterpart
+    // The codes here are lifted from Mono's codes 
+    // https://github.com/mono/mono/blob/main/sdks/wasm/framework/src/WebAssembly.Bindings/Core/TypedArrayTypeCode.cs
     public enum TypedArrayTypeCode
     {
         Int8Array = 5,

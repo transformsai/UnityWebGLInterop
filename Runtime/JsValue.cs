@@ -13,11 +13,15 @@ namespace TransformsAI.Unity.WebGL.Interop
         internal readonly double Value;
         private readonly JsReference _reference;
 
-        public static readonly JsValue Undefined = default;
+        // These are singletons. All JsValues for Undefined, Null, True, and False should be memory equivalent to these
+        public static readonly JsValue Undefined = default; // Initializes the struct to defaults (TypeId = 0, Value = 0)
         public static readonly JsValue Null = new JsValue(JsTypes.Null, 0);
         public static readonly JsValue True = new JsValue(JsTypes.Bool, 1);
         public static readonly JsValue False = new JsValue(JsTypes.Bool, 0);
 
+        /// <summary>
+        /// The Closest CLR represetnation of this value
+        /// </summary>
         public object RawValue
         {
             get
@@ -66,6 +70,9 @@ namespace TransformsAI.Unity.WebGL.Interop
             }
         }
 
+        
+        public bool IsJsNullLike => TypeId == JsTypes.Null || TypeId == JsTypes.Undefined;
+
         public override string ToString()
         {
             switch (TypeId)
@@ -99,6 +106,7 @@ namespace TransformsAI.Unity.WebGL.Interop
         }
 
         public JsValue GetProp(JsValue key) => JsRuntime.GetProp(this, key);
+        public void SetProp(string key, JsValue value) => JsRuntime.SetProp(this, key, value);
 
         public JsValue Invoke(string functionName, params JsValue[] values) =>
             JsRuntime.Invoke(this, functionName, values);
@@ -116,10 +124,11 @@ namespace TransformsAI.Unity.WebGL.Interop
             // check for references
             if (_reference is T refT) return refT;
 
-            if (TypeId == JsTypes.Null || TypeId == JsTypes.Undefined)
+            if (IsJsNullLike)
             {
                 // this also takes care of Nullable struct types
                 var def = default(T);
+                // Checks whether T can be null. If that is the case, we return null
                 if (def == null) return default;
                 throw new NullReferenceException($"Could not convert {nameof(JsValue)} to {typeof(T).Name}. Value was {this}");
             }
@@ -143,6 +152,8 @@ namespace TransformsAI.Unity.WebGL.Interop
 
             if (type == typeof(string)) return (T)(object)ToString();
 
+            // At this point, we've tried our best to return the conversion without boxing
+            // All future conversions require boxing.
 
             // do this last since RawValue requires boxing the values. 
             if (RawValue is T t2) return t2;
@@ -154,11 +165,9 @@ namespace TransformsAI.Unity.WebGL.Interop
         {
             if (type.IsInstanceOfType(this)) return this;
 
-
             var typeIsNullable = !type.IsValueType || Nullable.GetUnderlyingType(type) != null;
-            var isJsNullLike = TypeId == JsTypes.Null || TypeId == JsTypes.Undefined;
 
-            if (typeIsNullable && isJsNullLike) return null;
+            if (typeIsNullable && IsJsNullLike) return null;
 
             if (!TypeId.IsValueType())
             {
@@ -166,6 +175,8 @@ namespace TransformsAI.Unity.WebGL.Interop
                 if (type.IsInstanceOfType(jsRef)) return jsRef;
             }
 
+            // Now we know that the requested type is neither a JsValue, or a JsReference. This means that the requester
+            // is looking for the RawValue, or a type that the RawValue can be converted to.
             var value = RawValue;
 
             // Null value is handled above, so for nullable types we only care about the underlying types
@@ -187,7 +198,9 @@ namespace TransformsAI.Unity.WebGL.Interop
             if (converter.CanConvertTo(type)) return converter.ConvertTo(value, type);
 
             throw new InvalidCastException($"cannot convert JsValue of type {TypeId} to {type}");
+            
         }
+        
 
         #region Implicit Conversions
 

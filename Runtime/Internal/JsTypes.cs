@@ -24,7 +24,6 @@ namespace TransformsAI.Unity.WebGL.Interop.Internal
 
     public static class JsEnumExtensions
     {
-
         public static bool IsValueType(this JsTypes type)
         {
             switch (type)

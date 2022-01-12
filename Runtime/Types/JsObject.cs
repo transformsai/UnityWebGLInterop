@@ -12,7 +12,6 @@ namespace TransformsAI.Unity.WebGL.Interop.Types
         public override bool TruthyValue => true;
 
         internal JsObject(double refId, JsTypes typeId = JsTypes.Object) : base(typeId, refId) { }
-        public void SetProp(string key, JsValue value) => JsRuntime.SetProp(this, key, value);
         public void Populate(IDictionary dictionary)
         {
             var keys = dictionary.Keys as ICollection<string>;

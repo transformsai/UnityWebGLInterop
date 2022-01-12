@@ -16,13 +16,14 @@ namespace TransformsAI.Unity.WebGL.Interop
     public static class JsRuntime
     {
         // --- Api ---
-        public static JsValue GetGlobalValue(string identifier) =>
-            Raw.GetGlobalObject(out var typeId, identifier).Receive(typeId);
+        public static JsValue GetGlobalValue(JsValue identifier) =>
+            Raw.GetGlobalObject(out var typeId, identifier.Ref(), identifier.Type()).Receive(typeId);
         public static JsValue CreateHostObject(string identifier, JsValue param1 = default, JsValue param2 = default, JsValue param3 = default) =>
             GetGlobalValue(identifier).As<JsFunction>().Construct(param1, param2, param3);
         public static JsValue CreateHostObject(string identifier, params JsValue[] args) =>
             GetGlobalValue(identifier).As<JsFunction>().Construct(args);
-        public static JsObject CreateObject() => Raw.CreateEmptyObject(out var typeId).Receive(typeId).As<JsObject>();
+        public static JsObject CreateObject() =>
+            Raw.CreateEmptyObject(out var typeId).Receive(typeId).As<JsObject>();
 
         public static JsObject CreateObject(IDictionary dictionary)
         {
@@ -33,17 +34,26 @@ namespace TransformsAI.Unity.WebGL.Interop
 
         public static JsString CreateString(string str)
         {
+            // Can't use Receive, since we have to check the String cache. See JsString.cs for more info.
             if (JsString.TryGetString(str, out var jsString)) return jsString;
             var refId = Raw.CreateString(out var typeId, str);
             CheckException(refId, typeId);
+            // It's possible that the returned string reference could point to a string that was already in the 
+            // Reference cache, but not the string cache. This makes sure that they are the same reference.
             if (JsReference.TryGetRef(refId, out var existing) && existing is JsString s) return s;
             var jsStr = new JsString(refId, str);
             return jsStr;
         }
 
-        public static JsBigInt CreateBigInt(BigInteger bigInt) => GetGlobalValue("BigInt").As<JsFunction>().Call(bigInt.ToString()).As<JsBigInt>();
+        public static JsBigInt CreateBigInt(BigInteger bigInt)
+        {
+            // Gets the js BigInt function
+            var bigIntFunction = GetGlobalValue("BigInt").As<JsFunction>();
+            return bigIntFunction.Call(bigInt.ToString()).As<JsBigInt>();
+        }
 
-        public static JsArray CreateArray() => Raw.CreateArray(out var typeId).Receive(typeId).As<JsArray>();
+        public static JsArray CreateArray() =>
+            Raw.CreateArray(out var typeId).Receive(typeId).As<JsArray>();
 
         public static JsArray CreateArray(IEnumerable list)
         {
@@ -52,6 +62,10 @@ namespace TransformsAI.Unity.WebGL.Interop
             return arr;
         }
 
+        /// <summary>
+        /// This is equivalent to calling `new Function(body)` in Js. Warning: Use with caution. 
+        /// This is susceptible to being blocked by security policies or could lead to attacks through injection.
+        /// </summary>
         public static JsFunction CreateFunction(string body, bool cache = false)
         {
             if (cache && JsFunction.TryGetFunction(body, out var fn)) return fn;
@@ -60,12 +74,16 @@ namespace TransformsAI.Unity.WebGL.Interop
             return fn;
         }
 
+
+        /// <summary>
+        /// Warning: Use with caution. This is equivalent to calling `new Function(body)` in Js.
+        /// This is susceptible to being blocked by security policies or could lead to attacks through injection.
+        /// </summary>
         public static JsFunction CreateFunction(params string[] parametersThenBody)
         {
             var args = parametersThenBody.Select(it => (JsValue)it).ToArray();
             return GetGlobalValue("Function").As<JsFunction>().Construct(args).As<JsFunction>();
         }
-
 
         public static JsValue Construct(JsFunction function, JsValue param1 = default, JsValue param2 = default, JsValue param3 = default)
         {
@@ -76,11 +94,16 @@ namespace TransformsAI.Unity.WebGL.Interop
             return Receive(refId, typeId1);
 
         }
+
+        /// <summary>
+        /// Slower version of <see cref="Construct(JsFunction, JsValue,JsValue,JsValue)"/>. Uses an array to pass the parameters. This causes additional allocations
+        /// </summary>
         public static JsValue Construct(JsFunction function, params JsValue[] p)
         {
             if (function is JsCallback) throw new InvalidOperationException("Don't instantiate C# callbacks");
             return Raw.ConstructSlow(out var typeId, function.Ref(), CreateArray(p).Ref()).Receive(typeId);
         }
+
 
         public static JsValue Call(JsFunction function, JsValue param1 = default, JsValue param2 = default, JsValue param3 = default)
         {
@@ -90,24 +113,32 @@ namespace TransformsAI.Unity.WebGL.Interop
             return Receive(refId, typeId1);
         }
 
+        /// <summary>
+        /// Slower version of <see cref="Call(JsFunction, JsValue,JsValue,JsValue)"/>. Uses an array to pass the parameters. This causes additional allocations
+        /// </summary>
         public static JsValue Call(JsFunction function, params JsValue[] p) =>
             Raw.CallSlow(out var typeId, function.Ref(), CreateArray(p).Ref()).Receive(typeId);
 
-        public static JsValue Invoke(JsValue valueRef, string fnName, JsValue param1 = default, JsValue param2 = default, JsValue param3 = default)
+        public static JsValue Invoke(JsValue valueRef, JsValue fnName, JsValue param1 = default, JsValue param2 = default, JsValue param3 = default)
         {
-            var refId = Raw.Invoke(out var typeId1, valueRef.Ref(), valueRef.Type(), fnName, param1.Ref(),
-                param1.Type(), param2.Ref(),
-                param2.Type(), param3.Ref(), param3.Type());
+            var refId = Raw.Invoke(out var typeId1, valueRef.Ref(), valueRef.Type(), fnName.Ref(), fnName.Type(),
+                param1.Ref(), param1.Type(),
+                param2.Ref(), param2.Type(),
+                param3.Ref(), param3.Type());
             return Receive(refId, typeId1);
         }
 
-        public static JsValue Invoke(JsValue valueRef, string fnName, params JsValue[] p) =>
-            Raw.InvokeSlow(out var typeId, valueRef.Ref(), valueRef.Type(), fnName, CreateArray(p).Ref()).Receive(typeId);
+
+        /// <summary>
+        /// Slower version of <see cref="Invoke(JsValue,JsValue,JsValue,JsValue,JsValue)"/>. Uses an array to pass the parameters. This causes additional allocations
+        /// </summary>
+        public static JsValue Invoke(JsValue valueRef, JsValue fnName, params JsValue[] p) =>
+            Raw.InvokeSlow(out var typeId, valueRef.Ref(), valueRef.Type(), fnName.Ref(), fnName.Type(), CreateArray(p).Ref()).Receive(typeId);
 
         public static JsValue GetProp(JsValue obj, JsValue propName) =>
-            Raw.GetProp(out var typeId, obj.Value, propName.Ref(), propName.Type()).Receive(typeId);
-        public static void SetProp(JsObject obj, JsValue propName, JsValue value) =>
-            Raw.SetProp(out var typeId, obj.Ref(), propName.Ref(), propName.Type(), value.Ref(), value.Type()).CheckException(typeId);
+            Raw.GetProp(out var typeId, obj.Ref(), obj.Type(), propName.Ref(), propName.Type()).Receive(typeId);
+        public static void SetProp(JsValue obj, JsValue propName, JsValue value) =>
+            Raw.SetProp(out var typeId, obj.Ref(), obj.Type(), propName.Ref(), propName.Type(), value.Ref(), value.Type()).CheckException(typeId);
         public static JsValue GetArrayElement(JsArray array, int index) =>
             Raw.GetArrayElement(out var typeId, array.Ref(), index).Receive(typeId);
         public static void SetArrayElement(JsArray array, int index, JsValue value) =>
@@ -127,7 +158,6 @@ namespace TransformsAI.Unity.WebGL.Interop
             var handle = GCHandle.Alloc(array, GCHandleType.Pinned);
             try
             {
-                //var ptr = GCHandle.ToIntPtr(handle);
                 unsafe
                 {
                     fixed (T* ptr = array)
@@ -152,12 +182,19 @@ namespace TransformsAI.Unity.WebGL.Interop
             {
                 fixed (T* ptr = array)
                 {
-                    var refId = Raw.CreateSharedTypedArray(out var typeId, (int)ptr, array.TypeCode(), array.Length);
+                    var refId = Raw.CreateTypedArray(out var typeId, (int)ptr, array.TypeCode(), array.Length);
                     CheckException(refId, typeId);
                     return new JsTypedArray(refId);
 
                 }
             }
+        }
+
+        public static JsTypedArray CreateTypedArray(TypedArrayTypeCode type)
+        {
+            var refId = Raw.CreateEmptyTypedArray(out var typeId, (int)type);
+            CheckException(refId, typeId);
+            return new JsTypedArray(refId);
         }
 
         internal static string GetString(JsValue obj)
@@ -180,7 +217,9 @@ namespace TransformsAI.Unity.WebGL.Interop
         internal static void GarbageCollect(JsReference obj) =>
             Raw.GarbageCollect(out var typeId, obj.Ref(), obj.Type()).Receive(typeId);
 
-
+        /// <summary>
+        /// Converts a CLR object to a JsValue (if possible)
+        /// </summary>
         public static JsValue CreateFromObject(object obj)
         {
             switch (obj)
@@ -204,7 +243,7 @@ namespace TransformsAI.Unity.WebGL.Interop
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Initialize()
         {
-            if(Application.isEditor) return;
+            if (Application.isEditor) return;
 
             if (Application.platform != RuntimePlatform.WebGLPlayer)
                 throw new PlatformNotSupportedException("Should not be using JS-Interop on non-Webgl platforms");
@@ -212,7 +251,7 @@ namespace TransformsAI.Unity.WebGL.Interop
             Raw.Initialize(OnJsCallback, Acquire, Release);
             UnityEngine.Debug.Log("Initialized JS-Interop");
         }
-        
+
 
         private static bool Acquire(double refId)
         {
@@ -252,11 +291,11 @@ namespace TransformsAI.Unity.WebGL.Interop
 
 
         private static double Ref(this JsValue js) => js.Value;
-        private static double Ref(this JsReference js) => js?.RefValue.Ref() ?? JsValue.Null.Ref();
+        private static double Ref(this JsReference js) => js?.RefValue.Ref() ?? JsValue.Undefined.Ref();
         private static int Type(this JsValue js) => (int)js.TypeId;
-        private static int Type(this JsReference js) => js?.RefValue.Type() ?? JsValue.Null.Type();
+        private static int Type(this JsReference js) => js?.RefValue.Type() ?? JsValue.Undefined.Type();
         private static int TypeCode(this Array array) => (int)JsTypedArray.GetTypeCode(array);
-        
+
         private static void CheckException(this double refId, int typeId, [CallerMemberName] string funcName = null)
         {
             if (typeId != (int)JsTypes.Exception) return;
@@ -291,7 +330,8 @@ namespace TransformsAI.Unity.WebGL.Interop
                 case JsTypes.Promise: return new JsPromise(refId);
                 case JsTypes.Array: return new JsArray(refId);
                 case JsTypes.TypedArray: return new JsTypedArray(refId);
-                // Cannot create these from just reference numbers. These need to be made in C#
+                // Cannot create these from just reference numbers.
+                // These need to be made in C#. Therefore they should already be in the cache.
                 case JsTypes.Callback:
                 case JsTypes.SharedTypedArray:
                     throw new ObjectDisposedException($"Received JS reference of special type {typeId}. This object was likely disposed, but was still referenced by JS.");

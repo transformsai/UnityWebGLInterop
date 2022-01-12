@@ -3,8 +3,17 @@
       "lib": ["es5", "es6", "dom","ESNext"],
       "target": "ES6",
       "rootDir": "./",
-      "outFile": "../Runtime/Internal/Runtime.jspre",
+      "outFile": "../Runtime/Internal/JsRuntime.jspre",
       "strict": true,
-      "noFallthroughCasesInSwitch":true
+      "noFallthroughCasesInSwitch":true,
+      "importHelpers": true,
+      "experimentalDecorators": true,
+      "skipLibCheck": true,
+      "noImplicitAny": true,
+      "strictNullChecks" : true,
+      "alwaysStrict": true,
+      "allowSyntheticDefaultImports": true,
+      "sourceMap": true,
+      "baseUrl": ".",
   }
 }

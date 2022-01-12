@@ -29,7 +29,11 @@ namespace TransformsAI.Unity.WebGL.Interop
         public abstract object RawValue { get; }
         public abstract bool TruthyValue { get; }
         public virtual double NumberValue => JsRuntime.GetNumber(this);
+
+        public bool IsJsNullLike => _ref?.IsJsNullLike ?? true;
         public JsValue GetProp(JsValue key) => RefValue.GetProp(key);
+        // This is a No-op for things that don't inherit JsObject
+        public void SetProp(string key, JsValue value) => RefValue.SetProp(key, value);
         public JsValue Invoke(string functionName, params JsValue[] values) =>
             RefValue.Invoke(functionName, values);
         public JsValue Invoke(string functionName, JsValue param1 = default, JsValue param2 = default, JsValue param3 = default) =>

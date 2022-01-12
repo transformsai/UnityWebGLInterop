@@ -16,7 +16,8 @@ namespace TransformsAI.Unity.WebGL.Interop.Types
         public virtual JsValue Call(params JsValue[] args) => JsRuntime.Call(this, args);
         public virtual JsValue Call(JsValue arg1 = default, JsValue arg2 = default, JsValue arg3 = default) => JsRuntime.Call(this, arg1, arg2, arg3);
 
-        public static bool TryGetFunction(string str, out JsFunction jsFunction) => FunctionCache.TryGetValue(str, out jsFunction);
+        public static bool TryGetFunction(string str, out JsFunction jsFunction) => 
+            FunctionCache.TryGetValue(str, out jsFunction);
         public static void StoreFunction(string str, JsFunction jsFunction)
         {
             if (jsFunction == null) throw new NullReferenceException("Tried to store null reference");

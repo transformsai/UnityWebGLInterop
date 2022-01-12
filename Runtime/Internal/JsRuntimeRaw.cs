@@ -7,11 +7,15 @@ using AOT;
 
 namespace TransformsAI.Unity.WebGL.Interop.Internal
 {
+    // This is a translation layer that only uses primitives to communicate with Unity.
+    // As a result, this class doesn't use JsValue or JsReference.
+    // Methods of this file are automatically turned into .jslib and .ts files for the
+    // Javascript side to implement.
     internal static class RuntimeRaw
     {
 
         [DllImport("__Internal")]
-        internal static extern double GetGlobalObject(out int returnTypeId, string name);
+        internal static extern double GetGlobalObject(out int returnTypeId, double targetRef, int targetType);
 
         [DllImport("__Internal")]
         internal static extern double CreateEmptyObject(out int returnTypeId);
@@ -33,10 +37,10 @@ namespace TransformsAI.Unity.WebGL.Interop.Internal
 
 
         [DllImport("__Internal")]
-        internal static extern double InvokeSlow(out int returnTypeId, double targetRef,int targetType, string fnName, double paramArrayRef);
+        internal static extern double InvokeSlow(out int returnTypeId, double targetRef, int targetType, double fnNameRef, int fnNameType, double paramArrayRef);
 
         [DllImport("__Internal")]
-        internal static extern double Invoke(out int returnTypeId, double targetRef,int targetType, string fnName,
+        internal static extern double Invoke(out int returnTypeId, double targetRef, int targetType, double fnNameRef, int fnNameType,
             double paramValue1, int paramTypeId1,
             double paramValue2, int paramTypeId2,
             double paramValue3, int paramTypeId3);
@@ -52,10 +56,10 @@ namespace TransformsAI.Unity.WebGL.Interop.Internal
             double paramValue3, int paramTypeId3);
 
         [DllImport("__Internal")]
-        internal static extern double GetProp(out int returnTypeId, double objectRef, double propNameValue, int propNameTypeId);
+        internal static extern double GetProp(out int returnTypeId, double objectRef, int objectType, double propNameValue, int propNameTypeId);
 
         [DllImport("__Internal")]
-        internal static extern double SetProp(out int returnTypeId, double objectRef, double propNameValue, int propNameTypeId, double value, int valueTypeId);
+        internal static extern double SetProp(out int returnTypeId, double objectRef, int objectType, double propNameValue, int propNameTypeId, double value, int valueTypeId);
 
         [DllImport("__Internal")]
         internal static extern double GetArrayElement(out int returnTypeId, double arrayRef, int index);
@@ -73,6 +77,9 @@ namespace TransformsAI.Unity.WebGL.Interop.Internal
         internal static extern double CreateTypedArray(out int returnTypeId, int arrayPtr, int typeCode, int arrayLength);
 
         [DllImport("__Internal")]
+        internal static extern double CreateEmptyTypedArray(out int returnTypeId, int typeCode);
+
+        [DllImport("__Internal")]
         internal static extern double GarbageCollect(out int returnTypeId, double value, int typeId);
 
         [DllImport("__Internal")]
@@ -87,13 +94,25 @@ namespace TransformsAI.Unity.WebGL.Interop.Internal
         [DllImport("__Internal")]
         internal static extern double RespondToCallback(out int returnTypeId, double responseRefId, double value, int typeId);
 
+
+        // In Js, this method is used to construct the context that will handle the rest of the methods in this class.
+        // This needs to be called first.
         [DllImport("__Internal")]
         internal static extern void InitializeInternal(InternalCallbackListener callbackHandler, ReferenceHandler onAcquireReference, ReferenceHandler onReleaseReference);
 
 
         internal delegate bool ReferenceHandler(double refId);
         internal delegate void InternalCallbackListener(double callbackRefId, double responseRefId, double value, int typeId, bool paramsAreArray);
+        // We use a tuple to avoid contaminating this class with JsValue
         internal delegate (double value, int typeId) JsCallbackListener(double callbackRefId, double value, int typeId, bool paramsAreArray);
+
+        internal static void Initialize(JsCallbackListener onJsCallback, ReferenceHandler onAcquireReference, ReferenceHandler onReleaseReference)
+        {
+            _OnJsCallback = onJsCallback;
+            _OnJsAcquireRef = onAcquireReference;
+            _OnJsReleaseRef = onReleaseReference;
+            InitializeInternal(OnCallback, OnAcquireReference, OnReleaseReference);
+        }
 
         [MonoPInvokeCallback(typeof(InternalCallbackListener))]
         private static void OnCallback(double callbackRefId, double responseRefId, double value, int typeId, bool paramsAreArray)
@@ -114,12 +133,5 @@ namespace TransformsAI.Unity.WebGL.Interop.Internal
         private static ReferenceHandler _OnJsAcquireRef;
         private static ReferenceHandler _OnJsReleaseRef;
 
-        public static void Initialize(JsCallbackListener onJsCallback, ReferenceHandler onAcquireReference, ReferenceHandler onReleaseReference)
-        {
-            _OnJsCallback = onJsCallback;
-            _OnJsAcquireRef = onAcquireReference;
-            _OnJsReleaseRef = onReleaseReference;
-            InitializeInternal(OnCallback, OnAcquireReference, OnReleaseReference);
-        }
     }
 }

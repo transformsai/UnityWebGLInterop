@@ -66,15 +66,7 @@ namespace TransformsAI.Unity.WebGL.Interop.Editor
 
         private static void WriteMethod(MethodInfo method)
         {
-            var paramList = method.GetParameters();
-
-            var isStandardMethod =
-                method.ReturnType != typeof(void) &&
-                paramList.Length > 0 && paramList[0].IsOut &&
-                paramList[0].ParameterType.GetElementType() == typeof(int);
-
-            if (!isStandardMethod)
-                throw new Exception($"Unsupported extern method {method.Name} in {method.DeclaringType}");
+            CheckStandardMethod(method);
 
             Builder.Append(method.Name).Append(": (").AppendParams(method).AppendLine($") => {ReturnValueType};");
         }
@@ -99,15 +91,12 @@ namespace TransformsAI.Unity.WebGL.Interop.Editor
             return s;
         }
 
-        private static bool IsSpecialMethod(MethodInfo method) =>
-            method.Name == nameof(RuntimeRaw.InitializeInternal);
-
 
         private static string JsType(this Type type)
         {
             if (type == typeof(bool)) return "boolean";
             if (type == typeof(string)) return "string";
-            if (!type.IsValueType) return "number"; // pointers are references
+            if (!type.IsValueType) return "number"; // references are pointers which are numbers
             if (Marshal.SizeOf(type) <= 8) return "number";
             throw new InvalidCastException("Cannot Marshal type " + type);
         }
@@ -118,7 +107,7 @@ namespace TransformsAI.Unity.WebGL.Interop.Editor
             {
                 foreach (var method in RuntimeMethods)
                 {
-                    if (!IsSpecialMethod(method)) WriteMethod(method);
+                    if (!IsInitializeMethod(method)) WriteMethod(method);
                 }
             }
         }
@@ -158,7 +147,7 @@ namespace TransformsAI.Unity.WebGL.Interop.Editor
             Builder.AppendLine();
 
             Builder.Append("type ").Append(arrayBuilderType)
-                .AppendLine($" = (pointer: number, typeCode: {arrayTypeCodeType}, length: number) => {typedArrayType};");
+                .AppendLine($" = (typeCode: {arrayTypeCodeType}, pointer: number, length: number) => {typedArrayType};");
         }
 
         private static void WriteConstructor()
@@ -182,8 +171,11 @@ namespace TransformsAI.Unity.WebGL.Interop.Editor
         
             var releaseParam = initParams[2];
             var releaseMethod = releaseParam.ParameterType.GetMethod("Invoke");
-            if (releaseMethod != acquireMethod)
+            if (releaseMethod != acquireMethod || releaseMethod == null)
                 throw new Exception("CodeGen assumes that Release and Acquire have the same signature");
+
+            if(acquireMethod.ReturnType != typeof(bool))
+                throw new Exception("CodeGen assumes that Release and Acquire return booleans");
 
             WriteArrayBuilder(arrayBuilderType);
 

@@ -3,7 +3,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
-using TransformsAI.Unity.WebGL.Interop.Internal;
+using AOT;
 using TransformsAI.Unity.WebGL.Interop.Types;
 using static TransformsAI.Unity.WebGL.Interop.Editor.GeneratorCommon;
 
@@ -26,7 +26,9 @@ namespace TransformsAI.Unity.WebGL.Interop.Editor
             {
                 foreach (var method in RuntimeMethods)
                 {
-                    if (!WriteSpecialMethod(method)) WriteMethod(method);
+                    if (IsInitializeMethod(method)) WriteInitializeMethod(method);
+                    else WriteMethod(method);
+                    // I'm sorry, Liam.
                     Builder.AppendLine(",");
                 }
             }
@@ -36,14 +38,9 @@ namespace TransformsAI.Unity.WebGL.Interop.Editor
 
         private static void WriteMethod(MethodInfo method)
         {
+            CheckStandardMethod(method);
+            
             var paramList = method.GetParameters();
-
-            var isStandardMethod =
-                paramList.Length > 0 && paramList[0].IsOut &&
-                paramList[0].ParameterType.GetElementType() == typeof(int);
-
-            if (!isStandardMethod)
-                throw new Exception($"Unsupported extern method {method.Name} in {method.DeclaringType}");
 
             using (WriteMethodHeader(method))
             {
@@ -63,14 +60,15 @@ namespace TransformsAI.Unity.WebGL.Interop.Editor
 
                     using (Try)
                     {
-                        Builder.AppendLine("console.log(error)");
                         Builder.AppendLine("var errString = String(error)");
                         Builder.Append("var strRet = ").AppendContextGetter().AppendLine(".CreateString(errString);");
                         Builder.AppendLine("return strRet.value;");
+                        //Todo: allow users to access error object. (Perhaps add a verbose mode)
 
                     }
                     using (Catch("innerError"))
                     {
+                        Builder.AppendLine("console.error('[Unity WebGL Interop Error]' + innerError)");
                         Builder.AppendLine("return 0;");
                     }
                 }
@@ -107,18 +105,8 @@ namespace TransformsAI.Unity.WebGL.Interop.Editor
         private static IndentHolder WriteMethodHeader(MethodBase method) =>
             Builder.Append(method.Name).Append(": function (").AppendParams(method, true).Append(")").Brace();
         private static StringBuilder AppendMethodForwarding(this StringBuilder s, string contextVar, MethodBase method) =>
-            s.Append(contextVar).Append('.').Append(method.Name).Append('(').AppendParams(method, false).Append(");");
+            s.Append(contextVar).Append('.').Append(method.Name).Append('(').AppendParams(method, false).Append(")");
 
-        private static bool WriteSpecialMethod(MethodInfo method)
-        {
-            if (method.Name == nameof(RuntimeRaw.InitializeInternal))
-            {
-                WriteInitializeMethod(method);
-                return true;
-            }
-
-            return false;
-        }
 
         private static void WriteProcessStrings(ParameterInfo[] paramList)
         {
@@ -152,13 +140,15 @@ namespace TransformsAI.Unity.WebGL.Interop.Editor
         }
 
         private static StringBuilder AppendContextGetter(this StringBuilder b) =>
-            b.Append($@"Module['{InstanceModuleKey}']");
+            b.Append($"Module['{InstanceModuleKey}']");
 
 
         private static void WriteInitializeMethod(MethodInfo method)
         {
             using (WriteMethodHeader(method))
             {
+                Builder.Append("var arrayBuilder = ").AppendArrayBuilderFunction();
+
                 var callbackHandler = method.GetParameters()[0];
                 var onAcquireCallback = method.GetParameters()[1];
                 var onReleaseCallback = method.GetParameters()[2];
@@ -172,27 +162,30 @@ namespace TransformsAI.Unity.WebGL.Interop.Editor
                 var oacMethod = onAcquireCallback.ParameterType.GetMethod("Invoke");
                 var orcMethod = onReleaseCallback.ParameterType.GetMethod("Invoke");
 
-                Builder.Append("var arrayBuilder = ").AppendArrayBuilderFunction();
-                Builder.Append(@"var ch = ").AppendCallbackFunction(callbackHandler.Name, chMethod).AppendLine(";");
-                Builder.Append(@"var oac = ").AppendCallbackFunction(onAcquireCallback.Name, oacMethod).AppendLine(";");
-                Builder.Append(@"var orc = ").AppendCallbackFunction(onReleaseCallback.Name, orcMethod).AppendLine(";");
-                Builder.AppendLine($@"var ctr = Module['{ConstructorModuleKey}'];");
-                Builder.AppendLine($@"Module['{InstanceModuleKey}'] = new ctr(arrayBuilder, ch, oac, orc);");
+                Builder.Append("var callbackHandlerFwd = ").AppendCallbackFunction(callbackHandler.Name, chMethod);
+                Builder.Append("var onAcquireReferenceFwd = ").AppendCallbackFunction(onAcquireCallback.Name, oacMethod);
+                Builder.Append("var onReleaseReferenceFwd = ").AppendCallbackFunction(onReleaseCallback.Name, orcMethod);
+                Builder.AppendLine($"var ctr = Module['{ConstructorModuleKey}'];");
+                Builder.AppendLine($"Module['{InstanceModuleKey}'] = new ctr(arrayBuilder, callbackHandlerFwd, onAcquireReferenceFwd, onReleaseReferenceFwd);");
             }
         }
 
-        private static StringBuilder AppendCallbackFunction(this StringBuilder s, string pointerVar, MethodInfo method)
+        private static void AppendCallbackFunction(this StringBuilder s, string pointerVar, MethodInfo method)
         {
-            return s.Append("function(")
-                .AppendParams(method, false)
-                .Append("){")
-                .Append("return Runtime.dynCall('")
-                .AppendDyncallSignature(method)
-                .Append("', ")
-                .Append(pointerVar)
-                .Append(", [")
-                .AppendParams(method, false)
-                .Append("]);}");
+            using (s.Append("function(")
+                       .AppendParams(method, false)
+                       .Append(")").Brace())
+            {
+                
+                // todo: link to emscripten documentation for Runtime.dynCall
+                Builder.Append("return Runtime.dynCall('")
+                    .AppendDyncallSignature(method)
+                    .Append("', ")
+                    .Append(pointerVar)
+                    .Append(", [")
+                    .AppendParams(method, false)
+                    .AppendLine("]);");
+            }
         }
 
         private static StringBuilder AppendDyncallSignature(this StringBuilder s, MethodInfo m)
@@ -234,7 +227,7 @@ namespace TransformsAI.Unity.WebGL.Interop.Editor
 
         private static void AppendArrayBuilderFunction(this StringBuilder s)
         {
-            using (s.Append("function(pointer, typeCode, length)").Brace())
+            using (s.Append("function(typeCode, pointer, length)").Brace())
             {
                 using (Builder.Append("switch (typeCode)").Brace())
                 {

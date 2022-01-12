@@ -5,10 +5,11 @@ interface JsReference extends JsValue {
 }
 
 class JsSpecialReference implements JsReference {
-  readonly runtime: RuntimeContext;
   readonly type: JsTypes;
   readonly value: number;
-  readonly data: any;
+  readonly runtime: RuntimeContext;
+  // data used by the different special references.
+  readonly data: SharedArrayData | Array<string>;
   weakRef?: WeakRef<object>;
 
   constructor(runtime: RuntimeContext, type: JsTypes, value: number, data: any) {
@@ -45,14 +46,14 @@ class JsSpecialReference implements JsReference {
   }
 
   private GetSharedArray() {
-    var data: SharedArrayData = this.data;
-
-    var sharedArray = this.runtime.arrayBuilder(data.pointer, data.typeCode, data.length);
+    var data: SharedArrayData = <SharedArrayData>this.data;
+    var sharedArray = this.runtime.arrayBuilder(data.typeCode, data.pointer, data.length);
     return sharedArray;
   }
 
   GetCallbackFunction() {
-    var fn  = function(this: JsSpecialReference) {
+    // This is not a member function since we want it to be garbage collected.
+    var fn = function (this: JsSpecialReference) {
       let rawArgs = arguments;
 
       let param: JsValue;
@@ -81,7 +82,8 @@ class JsSpecialReference implements JsReference {
       this.runtime.callbackResponseRegistry.set(callbackResponseId, resultFn);
       this.runtime.callbackHandler(this.value, callbackResponseId, <number>param.value, param.type, isParamArray);
       this.runtime.callbackResponseRegistry.delete(callbackResponseId);
-      return retval;
+      var value = this.runtime.getValue(<number>retval.value, retval.type);
+      return value;
     }
     return fn.bind(this);
 
@@ -89,8 +91,8 @@ class JsSpecialReference implements JsReference {
 }
 
 interface SharedArrayData {
-  pointer: number;
   typeCode: TypedArrayTypeCode;
+  pointer: number;
   length: number
 }
 
@@ -222,9 +224,10 @@ class RuntimeContext implements JsRuntime {
     return Undefined;
   }
 
-  GetGlobalObject(name: string): JsValue {
+  GetGlobalObject(targetRef: number, targetType: number): JsValue {
+    var id = this.getValue(targetRef, targetType);
     var globals = <any>globalThis;
-    return this.makeRefFrom(globals[name]);
+    return this.makeRefFrom(globals[id]);
   }
 
   CreateEmptyObject(): JsValue {
@@ -254,6 +257,7 @@ class RuntimeContext implements JsRuntime {
     let param3 = this.getValue(paramValue3, paramTypeId3);
 
     let ret: any;
+    // we do this if so that we don't accidentally fire the arguments keyword with the wrong amount
     if (param3 !== undefined) ret = func(param1, param2, param3);
     else if (param2 !== undefined) ret = func(param1, param2);
     else if (param1 !== undefined) ret = func(param1);
@@ -262,25 +266,28 @@ class RuntimeContext implements JsRuntime {
     return this.makeRefFrom(ret);
   }
 
-  InvokeSlow(targetRef: number, targetType: number, fnName: string, paramArrayRef: number): JsValue {
+  InvokeSlow(targetRef: number, targetType: number, fnNameRef: number, fnNameType: number, paramArrayRef: number): JsValue {
+    var id = this.getValue(fnNameRef, fnNameType);
     let obj = this.getValue(targetRef, targetType);
     let params = this.getValue(paramArrayRef, JsTypes.Array);
-    let ret = obj[fnName](...params);
+    let ret = obj[id](...params);
     return this.makeRefFrom(ret);
   }
 
-  Invoke(targetRef: number, targetType: number, fnName: string, paramValue1: number, paramTypeId1: number, paramValue2: number, paramTypeId2: number, paramValue3: number, paramTypeId3: number): JsValue {
+  Invoke(targetRef: number, targetType: number, fnNameRef: number, fnNameType: number, paramValue1: number, paramTypeId1: number, paramValue2: number, paramTypeId2: number, paramValue3: number, paramTypeId3: number): JsValue {
 
+    var id = this.getValue(fnNameRef, fnNameType);
     let obj = this.getValue(targetRef, targetType);
     let param1 = this.getValue(paramValue1, paramTypeId1);
     let param2 = this.getValue(paramValue2, paramTypeId2);
     let param3 = this.getValue(paramValue3, paramTypeId3);
 
     let ret: any;
-    if (param3 !== undefined) ret = obj[fnName](param1, param2, param3);
-    else if (param2 !== undefined) ret = obj[fnName](param1, param2);
-    else if (param1 !== undefined) ret = obj[fnName](param1);
-    else ret = obj[fnName]();
+    // we do this if so that we don't accidentally fire the arguments keyword with the wrong amount
+    if (param3 !== undefined) ret = obj[id](param1, param2, param3);
+    else if (param2 !== undefined) ret = obj[id](param1, param2);
+    else if (param1 !== undefined) ret = obj[id](param1);
+    else ret = obj[id]();
 
     return this.makeRefFrom(ret);
   }
@@ -299,6 +306,7 @@ class RuntimeContext implements JsRuntime {
     let param3 = this.getValue(paramValue3, paramTypeId3);
 
     let ret: any;
+    // we do this if so that we don't accidentally fire the arguments keyword with the wrong amount
     if (param3 !== undefined) ret = new func(param1, param2, param3);
     else if (param2 !== undefined) ret = new func(param1, param2);
     else if (param1 !== undefined) ret = new func(param1);
@@ -307,15 +315,15 @@ class RuntimeContext implements JsRuntime {
     return this.makeRefFrom(ret);
   }
 
-  GetProp(objectRef: number, propNameValue: number, propNameTypeId: number): JsValue {
-    let obj = this.getValue(objectRef, JsTypes.Object);
+  GetProp(objectRef: number, objectType: number, propNameValue: number, propNameTypeId: number): JsValue {
+    let obj = this.getValue(objectRef, objectType);
     let name = this.getValue(propNameValue, propNameTypeId);
     let ret = obj[name];
     return this.makeRefFrom(ret);
   }
 
-  SetProp(objectRef: number, propNameValue: number, propNameTypeId: number, value: number, valueTypeId: number): JsValue {
-    let obj = this.getValue(objectRef, JsTypes.Object);
+  SetProp(objectRef: number, objectType: number, propNameValue: number, propNameTypeId: number, value: number, valueTypeId: number): JsValue {
+    let obj = this.getValue(objectRef, objectType);
     let name = this.getValue(propNameValue, propNameTypeId);
     let setValue = this.getValue(value, valueTypeId);
     obj[name] = setValue;
@@ -341,25 +349,42 @@ class RuntimeContext implements JsRuntime {
   }
 
   CreateSharedTypedArray(pointer: number, typeCode: number, arrayLength: number): JsValue {
-    let arrayData: SharedArrayData = { pointer, typeCode, length:arrayLength };
+    let arrayData: SharedArrayData = { pointer, typeCode, length: arrayLength };
     return this.createReference(JsTypes.SharedTypedArray, arrayData);
   }
 
   CreateTypedArray(arrayPtr: number, typeCode: number, arrayLength: number): JsValue {
-    let sharedArray = this.arrayBuilder(arrayPtr, typeCode, arrayLength);
+    let sharedArray = this.arrayBuilder(typeCode, arrayPtr, arrayLength);
     let ctr: any = sharedArray.constructor;
     let newArr: TypedArray = new ctr(sharedArray.length);
     newArr.set(sharedArray);
     return this.makeRefFrom(newArr);
   }
 
+
+  CreateEmptyTypedArray(typeCode: number): JsValue {
+    //todo: make a separate function to convert typecode to constructor instead of using arrayBuilder.
+    let sharedArray = this.arrayBuilder(typeCode, 0, 0);
+    let ctr: any = sharedArray.constructor;
+    let newArr: TypedArray = new ctr(0);
+    return this.makeRefFrom(newArr);
+  }
+
   GarbageCollect(value: number, typeId: number): JsValue {
+    switch(typeId){
+      case JsTypes.Undefined:
+      case JsTypes.Null:
+      case JsTypes.Bool:
+      case JsTypes.Number:
+        return Undefined;
+    }
+
     let holder = this.referenceRegistry.get(value);
     if (!holder) return Undefined;
     let ref: any;
     if (holder instanceof JsSpecialReference) {
       ref = holder.weakRef?.deref();
-      if(ref) this.weakRefFinalizer.unregister(ref);
+      if (ref) this.weakRefFinalizer.unregister(ref);
     }
     else ref = holder.reference;
 
@@ -379,12 +404,12 @@ class RuntimeContext implements JsRuntime {
 
   GetNumber(value: number, typeId: number): JsValue {
     let val = this.getValue(value, typeId);
-    return {type: JsTypes.Number, value: Number(val)};
+    return { type: JsTypes.Number, value: Number(val) };
   }
 
   GetString(value: number, typeId: number): JsValue {
     let val = this.getValue(value, typeId);
-    return {type: JsTypes.Number, value: String(val)};
+    return { type: JsTypes.Number, value: String(val) };
   }
 }
 
