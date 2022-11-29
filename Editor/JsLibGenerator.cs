@@ -165,12 +165,38 @@ namespace TransformsAI.Unity.WebGL.Interop.Editor
                 Builder.Append("var callbackHandlerFwd = ").AppendCallbackFunction(callbackHandler.Name, chMethod);
                 Builder.Append("var onAcquireReferenceFwd = ").AppendCallbackFunction(onAcquireCallback.Name, oacMethod);
                 Builder.Append("var onReleaseReferenceFwd = ").AppendCallbackFunction(onReleaseCallback.Name, orcMethod);
+                
+                Builder.Append("var callbackHandlerFwdOld = ").AppendCallbackFunctionOld(callbackHandler.Name, chMethod);
+                Builder.Append("var onAcquireReferenceFwdOld = ").AppendCallbackFunctionOld(onAcquireCallback.Name, oacMethod);
+                Builder.Append("var onReleaseReferenceFwdOld = ").AppendCallbackFunctionOld(onReleaseCallback.Name, orcMethod);
+                
                 Builder.AppendLine($"var ctr = Module['{ConstructorModuleKey}'];");
-                Builder.AppendLine($"Module['{InstanceModuleKey}'] = new ctr(arrayBuilder, callbackHandlerFwd, onAcquireReferenceFwd, onReleaseReferenceFwd);");
+                Builder.AppendLine($"Module['{InstanceModuleKey}'] = new ctr(arrayBuilder, " +
+                                   "oldRuntime ? callbackHandlerFwdOld : callbackHandlerFwd, " +
+                                   "oldRuntime ? onAcquireReferenceFwdOld : onAcquireReferenceFwd, " +
+                                   "oldRuntime ? onReleaseReferenceFwdOld : onReleaseReferenceFwd);");
             }
         }
 
         private static void AppendCallbackFunction(this StringBuilder s, string pointerVar, MethodInfo method)
+        {
+            using (s.Append("function(")
+                       .AppendParams(method, false)
+                       .Append(")").Brace())
+            {
+                
+                // todo: link to emscripten documentation for Runtime.dynCall
+                Builder.Append("return Module['dynCall_")
+                    .AppendDyncallSignature(method)
+                    .Append("'](")
+                    .Append(pointerVar)
+                    .Append(", ")
+                    .AppendParams(method, false)
+                    .AppendLine(");");
+            }
+        }
+        
+        private static void AppendCallbackFunctionOld(this StringBuilder s, string pointerVar, MethodInfo method)
         {
             using (s.Append("function(")
                        .AppendParams(method, false)

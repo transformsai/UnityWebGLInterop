@@ -98,7 +98,7 @@ namespace TransformsAI.Unity.WebGL.Interop.Internal
         // In Js, this method is used to construct the context that will handle the rest of the methods in this class.
         // This needs to be called first.
         [DllImport("__Internal")]
-        internal static extern void InitializeInternal(InternalCallbackListener callbackHandler, ReferenceHandler onAcquireReference, ReferenceHandler onReleaseReference);
+        internal static extern void InitializeInternal(InternalCallbackListener callbackHandler, ReferenceHandler onAcquireReference, ReferenceHandler onReleaseReference, bool oldRuntime = true);
 
 
         internal delegate bool ReferenceHandler(double refId);

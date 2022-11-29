@@ -488,7 +488,7 @@ mergeInto(LibraryManager.library,{
     }
   }
   ,
-  InitializeInternal: function (callbackHandler, onAcquireReference, onReleaseReference){
+  InitializeInternal: function (callbackHandler, onAcquireReference, onReleaseReference, oldRuntime){
     var arrayBuilder = function(typeCode, pointer, length){
       switch (typeCode){
         case 5: return new Int8Array(buffer, pointer, length);
@@ -503,16 +503,25 @@ mergeInto(LibraryManager.library,{
       }
     }
     var callbackHandlerFwd = function(callbackRefId, responseRefId, value, typeId, paramsAreArray){
-      return Runtime.dynCall('vdddii', callbackHandler, [callbackRefId, responseRefId, value, typeId, paramsAreArray]);
+      return Module['dynCall_vdddii'](callbackHandler, callbackRefId, responseRefId, value, typeId, paramsAreArray);
     }
     var onAcquireReferenceFwd = function(refId){
-      return Runtime.dynCall('id', onAcquireReference, [refId]);
+      return Module['dynCall_id'](onAcquireReference, refId);
     }
     var onReleaseReferenceFwd = function(refId){
+      return Module['dynCall_id'](onReleaseReference, refId);
+    }
+    var callbackHandlerFwdOld = function(callbackRefId, responseRefId, value, typeId, paramsAreArray){
+      return Runtime.dynCall('vdddii', callbackHandler, [callbackRefId, responseRefId, value, typeId, paramsAreArray]);
+    }
+    var onAcquireReferenceFwdOld = function(refId){
+      return Runtime.dynCall('id', onAcquireReference, [refId]);
+    }
+    var onReleaseReferenceFwdOld = function(refId){
       return Runtime.dynCall('id', onReleaseReference, [refId]);
     }
     var ctr = Module['UnityJsInterop'];
-    Module['UnityJsInteropInstance'] = new ctr(arrayBuilder, callbackHandlerFwd, onAcquireReferenceFwd, onReleaseReferenceFwd);
+    Module['UnityJsInteropInstance'] = new ctr(arrayBuilder, oldRuntime ? callbackHandlerFwdOld : callbackHandlerFwd, oldRuntime ? onAcquireReferenceFwdOld : onAcquireReferenceFwd, oldRuntime ? onReleaseReferenceFwdOld : onReleaseReferenceFwd);
   }
   ,
 }
