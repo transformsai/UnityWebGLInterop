@@ -247,8 +247,11 @@ namespace TransformsAI.Unity.WebGL.Interop
 
             if (Application.platform != RuntimePlatform.WebGLPlayer)
                 throw new PlatformNotSupportedException("Should not be using JS-Interop on non-Webgl platforms");
-
+#if UNITY_2020
             Raw.Initialize(OnJsCallback, Acquire, Release);
+#else
+            Raw.Initialize(OnJsCallback, Acquire, Release, false);
+#endif
             UnityEngine.Debug.Log("Initialized JS-Interop");
         }
 
