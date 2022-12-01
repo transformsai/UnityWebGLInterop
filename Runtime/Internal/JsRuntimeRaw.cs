@@ -98,7 +98,7 @@ namespace TransformsAI.Unity.WebGL.Interop.Internal
         // In Js, this method is used to construct the context that will handle the rest of the methods in this class.
         // This needs to be called first.
         [DllImport("__Internal")]
-        internal static extern void InitializeInternal(InternalCallbackListener callbackHandler, ReferenceHandler onAcquireReference, ReferenceHandler onReleaseReference);
+        internal static extern void InitializeInternal(InternalCallbackListener callbackHandler, ReferenceHandler onAcquireReference, ReferenceHandler onReleaseReference, bool oldRuntime = true);
 
 
         internal delegate bool ReferenceHandler(double refId);
@@ -106,12 +106,12 @@ namespace TransformsAI.Unity.WebGL.Interop.Internal
         // We use a tuple to avoid contaminating this class with JsValue
         internal delegate (double value, int typeId) JsCallbackListener(double callbackRefId, double value, int typeId, bool paramsAreArray);
 
-        internal static void Initialize(JsCallbackListener onJsCallback, ReferenceHandler onAcquireReference, ReferenceHandler onReleaseReference)
+        internal static void Initialize(JsCallbackListener onJsCallback, ReferenceHandler onAcquireReference, ReferenceHandler onReleaseReference, bool oldRuntime = true)
         {
             _OnJsCallback = onJsCallback;
             _OnJsAcquireRef = onAcquireReference;
             _OnJsReleaseRef = onReleaseReference;
-            InitializeInternal(OnCallback, OnAcquireReference, OnReleaseReference);
+            InitializeInternal(OnCallback, OnAcquireReference, OnReleaseReference, oldRuntime);
         }
 
         [MonoPInvokeCallback(typeof(InternalCallbackListener))]

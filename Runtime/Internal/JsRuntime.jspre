@@ -61,10 +61,11 @@ class JsSpecialReference {
     }
     GetSharedArray() {
         var data = this.data;
-        var sharedArray = this.runtime.arrayBuilder(data.pointer, data.typeCode, data.length);
+        var sharedArray = this.runtime.arrayBuilder(data.typeCode, data.pointer, data.length);
         return sharedArray;
     }
     GetCallbackFunction() {
+        // This is not a member function since we want it to be garbage collected.
         var fn = function () {
             let rawArgs = arguments;
             let param;
@@ -90,7 +91,8 @@ class JsSpecialReference {
             this.runtime.callbackResponseRegistry.set(callbackResponseId, resultFn);
             this.runtime.callbackHandler(this.value, callbackResponseId, param.value, param.type, isParamArray);
             this.runtime.callbackResponseRegistry.delete(callbackResponseId);
-            return retval;
+            var value = this.runtime.getValue(retval.value, retval.type);
+            return value;
         };
         return fn.bind(this);
     }
@@ -206,9 +208,10 @@ class RuntimeContext {
         fn({ type: typeId, value: value });
         return Undefined;
     }
-    GetGlobalObject(name) {
+    GetGlobalObject(targetRef, targetType) {
+        var id = this.getValue(targetRef, targetType);
         var globals = globalThis;
-        return this.makeRefFrom(globals[name]);
+        return this.makeRefFrom(globals[id]);
     }
     CreateEmptyObject() {
         return this.makeRefFrom({});
@@ -231,6 +234,7 @@ class RuntimeContext {
         let param2 = this.getValue(paramValue2, paramTypeId2);
         let param3 = this.getValue(paramValue3, paramTypeId3);
         let ret;
+        // we do this if so that we don't accidentally fire the arguments keyword with the wrong amount
         if (param3 !== undefined)
             ret = func(param1, param2, param3);
         else if (param2 !== undefined)
@@ -241,26 +245,29 @@ class RuntimeContext {
             ret = func();
         return this.makeRefFrom(ret);
     }
-    InvokeSlow(targetRef, targetType, fnName, paramArrayRef) {
+    InvokeSlow(targetRef, targetType, fnNameRef, fnNameType, paramArrayRef) {
+        var id = this.getValue(fnNameRef, fnNameType);
         let obj = this.getValue(targetRef, targetType);
         let params = this.getValue(paramArrayRef, JsTypes.Array);
-        let ret = obj[fnName](...params);
+        let ret = obj[id](...params);
         return this.makeRefFrom(ret);
     }
-    Invoke(targetRef, targetType, fnName, paramValue1, paramTypeId1, paramValue2, paramTypeId2, paramValue3, paramTypeId3) {
+    Invoke(targetRef, targetType, fnNameRef, fnNameType, paramValue1, paramTypeId1, paramValue2, paramTypeId2, paramValue3, paramTypeId3) {
+        var id = this.getValue(fnNameRef, fnNameType);
         let obj = this.getValue(targetRef, targetType);
         let param1 = this.getValue(paramValue1, paramTypeId1);
         let param2 = this.getValue(paramValue2, paramTypeId2);
         let param3 = this.getValue(paramValue3, paramTypeId3);
         let ret;
+        // we do this if so that we don't accidentally fire the arguments keyword with the wrong amount
         if (param3 !== undefined)
-            ret = obj[fnName](param1, param2, param3);
+            ret = obj[id](param1, param2, param3);
         else if (param2 !== undefined)
-            ret = obj[fnName](param1, param2);
+            ret = obj[id](param1, param2);
         else if (param1 !== undefined)
-            ret = obj[fnName](param1);
+            ret = obj[id](param1);
         else
-            ret = obj[fnName]();
+            ret = obj[id]();
         return this.makeRefFrom(ret);
     }
     ConstructSlow(functionRef, paramArrayRef) {
@@ -275,6 +282,7 @@ class RuntimeContext {
         let param2 = this.getValue(paramValue2, paramTypeId2);
         let param3 = this.getValue(paramValue3, paramTypeId3);
         let ret;
+        // we do this if so that we don't accidentally fire the arguments keyword with the wrong amount
         if (param3 !== undefined)
             ret = new func(param1, param2, param3);
         else if (param2 !== undefined)
@@ -285,14 +293,14 @@ class RuntimeContext {
             ret = new func();
         return this.makeRefFrom(ret);
     }
-    GetProp(objectRef, propNameValue, propNameTypeId) {
-        let obj = this.getValue(objectRef, JsTypes.Object);
+    GetProp(objectRef, objectType, propNameValue, propNameTypeId) {
+        let obj = this.getValue(objectRef, objectType);
         let name = this.getValue(propNameValue, propNameTypeId);
         let ret = obj[name];
         return this.makeRefFrom(ret);
     }
-    SetProp(objectRef, propNameValue, propNameTypeId, value, valueTypeId) {
-        let obj = this.getValue(objectRef, JsTypes.Object);
+    SetProp(objectRef, objectType, propNameValue, propNameTypeId, value, valueTypeId) {
+        let obj = this.getValue(objectRef, objectType);
         let name = this.getValue(propNameValue, propNameTypeId);
         let setValue = this.getValue(value, valueTypeId);
         obj[name] = setValue;
@@ -318,14 +326,28 @@ class RuntimeContext {
         return this.createReference(JsTypes.SharedTypedArray, arrayData);
     }
     CreateTypedArray(arrayPtr, typeCode, arrayLength) {
-        let sharedArray = this.arrayBuilder(arrayPtr, typeCode, arrayLength);
+        let sharedArray = this.arrayBuilder(typeCode, arrayPtr, arrayLength);
         let ctr = sharedArray.constructor;
         let newArr = new ctr(sharedArray.length);
         newArr.set(sharedArray);
         return this.makeRefFrom(newArr);
     }
+    CreateEmptyTypedArray(typeCode) {
+        //todo: make a separate function to convert typecode to constructor instead of using arrayBuilder.
+        let sharedArray = this.arrayBuilder(typeCode, 0, 0);
+        let ctr = sharedArray.constructor;
+        let newArr = new ctr(0);
+        return this.makeRefFrom(newArr);
+    }
     GarbageCollect(value, typeId) {
         var _a;
+        switch (typeId) {
+            case JsTypes.Undefined:
+            case JsTypes.Null:
+            case JsTypes.Bool:
+            case JsTypes.Number:
+                return Undefined;
+        }
         let holder = this.referenceRegistry.get(value);
         if (!holder)
             return Undefined;
@@ -360,3 +382,4 @@ class RuntimeContext {
     }
 }
 Module.UnityJsInterop = RuntimeContext;
+//# sourceMappingURL=JsRuntime.jspre.map
