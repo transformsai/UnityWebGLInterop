@@ -1,10 +1,10 @@
 {
     "name": "ai.transforms.js-interop",
-    "version": "0.4.0",
+    "version": "0.4.1",
     "displayName": "JS-Interop",
     "description": "Allows calling Javascript in webgl builds using using C# Code Only.",
-    "unity": "2020.3",
-    "unityRelease": "22f1",
+    "unity": "2022.1",
+    "unityRelease": "13f1",
     "documentationUrl": "https://github.com/transformsai/UnityWebGLInterop",
     "dependencies": {
       "org.nuget.system.runtime.compilerservices.unsafe":"4.4.0"
