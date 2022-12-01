@@ -8,7 +8,7 @@ For example
 
 // csharp code.
 
-var window = JsRuntime.GetGlobalValue("");
+var window = JsRuntime.GetGlobalValue("window");
 var location = window.GetProp("location").GetProp("href");
 
 var console = JsRuntime.GetGlobalValue("console");
