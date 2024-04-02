@@ -116,7 +116,7 @@ namespace TransformsAI.Unity.WebGL.Interop.Editor
                 {
                     Builder.Append(param.Name)
                         .Append(" = ")
-                        .Append("Pointer_stringify(")
+                        .Append("UTF8ToString(")
                         .Append(param.Name)
                         .AppendLine(");");
                 }

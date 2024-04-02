@@ -44,7 +44,7 @@ mergeInto(LibraryManager.library,{
   ,
   CreateString: function (returnTypeId, str){
     try{
-      str = Pointer_stringify(str);
+      str = UTF8ToString(str);
       var context = Module['UnityJsInteropInstance'];
       var ret = context.CreateString(str);
       setValue(returnTypeId, ret.type, 'i32');
