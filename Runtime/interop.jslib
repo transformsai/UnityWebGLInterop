@@ -28,27 +28,27 @@ mergeInto(LibraryManager.library, {
   RegisterChannel: function (instanceKey, address) {
     return window.GrpcWebUnityDelegator.RegisterChannel(
       instanceKey, 
-      Pointer_stringify(address)
+      UTF8ToString(address)
       );
   },
   UnaryRequest: function (instanceKey, channelKey, serviceName, methodName, headers, base64Message, deadlineTimestampSecs) {
     return window.GrpcWebUnityDelegator.UnaryRequest(
       instanceKey, 
       channelKey, 
-      Pointer_stringify(serviceName), 
-      Pointer_stringify(methodName), 
-      Pointer_stringify(headers), 
-      Pointer_stringify(base64Message), 
+      UTF8ToString(serviceName), 
+      UTF8ToString(methodName), 
+      UTF8ToString(headers), 
+      UTF8ToString(base64Message), 
       deadlineTimestampSecs);
   },
   ServerStreamingRequest: function (instanceKey, channelKey, serviceName, methodName, headers, base64Message, deadlineTimestampSecs) {
     return window.GrpcWebUnityDelegator.ServerStreamingRequest(
       instanceKey, 
       channelKey, 
-      Pointer_stringify(serviceName), 
-      Pointer_stringify(methodName), 
-      Pointer_stringify(headers), 
-      Pointer_stringify(base64Message), 
+      UTF8ToString(serviceName), 
+      UTF8ToString(methodName), 
+      UTF8ToString(headers), 
+      UTF8ToString(base64Message), 
       deadlineTimestampSecs);
   },
   CancelCall: function (instanceKey, channelKey, callKey) {
